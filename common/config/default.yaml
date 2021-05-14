@@ -1,0 +1,9 @@
+collector:
+  port: 8090
+  level: "DEBUG"
+  channel: "COLLECTOR"
+
+handler:
+  port: 8091
+  level: "DEBUG"
+  channel: "COLLECTOR"

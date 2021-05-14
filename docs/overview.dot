@@ -1,0 +1,61 @@
+digraph g {
+   graph [fontsize=20 labelloc="t" label="" splines=true overlap=false rankdir="TB"];
+   "Router" [
+       style="filled, bold" 
+       penwidth=1
+       fillcolor="white"
+       shape = "Mdiamond"
+       label =<<table border="0" cellborder="0" cellpadding="3" bgcolor="white">
+        <tr><td bgcolor="black"><font color="white">Router</font></td></tr>
+        <tr><td>- POST/GET /collect</td></tr>
+        <tr><td>- GET /sdk</td></tr>
+       </table>>
+    ];
+
+   "Redis" [ 
+       style = "filled" 
+       penwidth = 1 
+       fillcolor = "white" 
+       fontname = "Courier New" 
+       shape = "Mrecord" 
+       label =<<table border="0" cellborder="0" cellpadding="3" bgcolor="white">
+            <tr>
+                <td bgcolor="black" align="center" colspan="2">
+                    <font color="white">Redis</font>
+                </td>
+            </tr>
+       </table>> 
+    ];
+    subgraph cluster_1 {
+        node [style=filled]
+        Router -> collect_handler
+        Router -> sdk_handler
+        label="Collector"
+    }
+
+    subgraph cluster_0 {
+		node [style=filled];
+		event_on -> b3;
+		label = "Handler";
+		color=blue
+	}
+
+   "Clickhouse" [
+       style = "filled" 
+       penwidth = 1 
+       fillcolor = "white" 
+       fontname = "Courier New" 
+       shape = "Mrecord" 
+       label =<<table border="0" cellborder="0" cellpadding="3" bgcolor="white">
+            <tr>
+                <td bgcolor="black" align="center" colspan="2">
+                    <font color="white">Clickhouse</font>
+                </td>
+            </tr>
+       </table>> 
+    ];
+ 
+    collect_handler -> Redis [ penwidth = 1 fontsize = 20 fontcolor = "black" label = "event" ];
+    Redis -> event_on
+    b3 -> Clickhouse
+}

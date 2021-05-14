@@ -1,0 +1,14 @@
+# Mac OS X files
+.DS_Store
+
+build/
+vendor/
+thirdparty/
+pkg/
+logs/
+tmp/
+
+.vscode/launch.json
+
+webalytic.code-workspace
+
