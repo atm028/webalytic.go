@@ -5,19 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	Inversify "github.com/alekns/go-inversify"
+	"github.com/bhoriuchi/go-bunyan/bunyan"
 	AppConfig "github.com/webalytic.go/cmd/collector/config"
-	CommonCfg "github.com/webalytic.go/common/config"
 	RedisBroker "github.com/webalytic.go/common/redis"
 )
 
-func CollectHandler(container Inversify.Container) http.HandlerFunc {
-	cfgObj, _ := container.Get("appConfig")
-	cfg, _ := cfgObj.(*AppConfig.CollectorConfig)
-	cfgObj, _ = container.Get("redisBroker")
-	broker, _ := cfgObj.(*RedisBroker.RedisBroker)
-	logger := CommonCfg.GetLogger(container)
-
+func CollectHandler(logger bunyan.Logger, broker *RedisBroker.RedisBroker, cfg *AppConfig.CollectorConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Debug("Collect handler")
 		var payment Payment

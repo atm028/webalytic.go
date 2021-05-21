@@ -1,0 +1,96 @@
+digraph g {
+    graph [fontsize=20 labelloc="t" label="DI" splines=true overlap=false rankdir="TB"]
+
+    "CollectorConfig" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "HandlerConfig" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "RedisEventBroker" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "RedisConfig" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "DbConfig" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "LoggerConfig" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "Logger" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "CollectorHttpHandler" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "RedisEventBrokerHandler" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "CollectorApp" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "HandlerApp" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "ClickHouseConfig" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "ClickHouse" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+
+    RedisConfig -> RedisEventBroker
+    LoggerConfig -> Logger
+    ClickHouseConfig -> ClickHouse
+    CollectorConfig -> CollectorApp
+    RedisEventBroker -> CollectorApp
+    CollectorHttpHandler -> CollectorApp
+    Logger -> CollectorApp
+
+    RedisEventBrokerHandler -> HandlerApp
+    ClickHouse -> RedisEventBrokerHandler
+    HandlerConfig -> HandlerApp
+    RedisEventBroker -> HandlerApp
+    Logger -> HandlerApp
+}

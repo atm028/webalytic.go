@@ -1,8 +1,7 @@
 package config
 
 import (
-	Inversify "github.com/alekns/go-inversify"
-	CommonCfg "github.com/webalytic.go/common/config"
+	"github.com/spf13/viper"
 )
 
 type ICollectorConfig interface {
@@ -12,39 +11,35 @@ type ICollectorConfig interface {
 }
 
 type CollectorConfig struct {
-	Container Inversify.Container
+	Viper *viper.Viper
 }
 
-func (c CollectorConfig) Port() int {
-	viper := CommonCfg.GetViper(c.Container)
-
-	viper.SetDefault("collector.port", 8090)
-	port := viper.GetInt("collector.port")
+func (c *CollectorConfig) Port() int {
+	c.Viper.SetDefault("collector.port", 8090)
+	port := c.Viper.GetInt("collector.port")
 	if port == 0 {
-		viper.BindEnv("port")
-		port = viper.GetInt("port")
+		c.Viper.BindEnv("port")
+		port = c.Viper.GetInt("port")
 	}
 	return port
 }
 
-func (c CollectorConfig) Level() string {
-	viper := CommonCfg.GetViper(c.Container)
-	viper.SetDefault("collector.level", "DEBUG")
-	level := viper.GetString("collector.level")
+func (c *CollectorConfig) Level() string {
+	c.Viper.SetDefault("collector.level", "DEBUG")
+	level := c.Viper.GetString("collector.level")
 	if len(level) == 0 {
-		viper.BindEnv("level")
-		level = viper.GetString("level")
+		c.Viper.BindEnv("level")
+		level = c.Viper.GetString("level")
 	}
 	return level
 }
 
-func (c CollectorConfig) Channel() string {
-	viper := CommonCfg.GetViper(c.Container)
-	viper.SetDefault("collector.channel", "COLLECTOR")
-	ch := viper.GetString("collector.channel")
+func (c *CollectorConfig) Channel() string {
+	c.Viper.SetDefault("collector.channel", "COLLECTOR")
+	ch := c.Viper.GetString("collector.channel")
 	if len(ch) == 0 {
-		viper.BindEnv("channel")
-		ch = viper.GetString("channel")
+		c.Viper.BindEnv("channel")
+		ch = c.Viper.GetString("channel")
 	}
 	return ch
 }

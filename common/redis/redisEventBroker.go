@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	inversify "github.com/alekns/go-inversify"
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/go-redis/redis"
 	CommonCfg "github.com/webalytic.go/common/config"
+	"go.uber.org/fx"
 )
 
 type IRedisEventBroker interface {
@@ -23,9 +23,10 @@ type ClientInfo struct {
 }
 
 type RedisBroker struct {
-	redis   *redis.Client
-	clients map[string]ClientInfo
-	logger  bunyan.Logger
+	redis    *redis.Client
+	clients  map[string]ClientInfo
+	logger   bunyan.Logger
+	consumer string
 }
 
 func (broker *RedisBroker) Subscribe(channel string, evtChannel chan redis.XMessage) {
@@ -83,22 +84,49 @@ func (broker *RedisBroker) readStream() {
 	}
 }
 
-func Init(container inversify.Container) *RedisBroker {
-	logger := CommonCfg.GetLogger(container)
-	logger.Debug("Init RedisStreamEventBroker")
-	cfgObj, _ := container.Get("redisConfig")
-	cfg, _ := cfgObj.(*CommonCfg.RedisConfig)
-	logger.Debug("Redis broker: ", cfg)
+func (broker *RedisBroker) readGroupStream() {
 
-	broker := &RedisBroker{
-		redis: redis.NewClient(&redis.Options{
-			Addr: fmt.Sprintf("%s:%d", cfg.Host(), cfg.Port()),
-		}),
-		clients: make(map[string]ClientInfo),
-		logger:  logger,
+	for {
+		entries, _ := broker.redis.XReadGroup(&redis.XReadGroupArgs{
+			Group:    "group",
+			Consumer: broker.consumer,
+			Streams:  []string{"stream", ">"},
+		}).Result()
+		for _, entry := range entries {
+			broker.logger.Info("readGroupStream: event: ", entry)
+		}
 	}
-	logger.Debug("Created broker on redis server: ", broker.redis.Options().Addr)
-	go broker.readStream()
+}
 
-	return broker
+func (broker *RedisBroker) createGroupService(channel string, group string) error {
+	err := broker.redis.XGroupCreate(channel, group, "0").Err()
+	if err != nil {
+		broker.logger.Error("Error: createGroupService: ", err)
+	}
+	return err
+}
+
+func Container() fx.Option {
+	return fx.Options(fx.Provide(func(
+		logger bunyan.Logger,
+		commonAppCfg *CommonCfg.AppConfig,
+		redisCfg *CommonCfg.RedisConfig,
+	) *RedisBroker {
+		logger.Debug("Init RedisStreamEventBroker")
+		logger.Debug("Redis broker: ", redisCfg)
+
+		broker := &RedisBroker{
+			redis: redis.NewClient(&redis.Options{
+				Addr: fmt.Sprintf("%s:%d", redisCfg.Host(), redisCfg.Port()),
+			}),
+			clients:  make(map[string]ClientInfo),
+			logger:   logger,
+			consumer: commonAppCfg.Name,
+		}
+		logger.Debug("Created broker on redis server: ", broker.redis.Options().Addr)
+		go broker.readStream()
+		go broker.readGroupStream()
+
+		return broker
+	}))
 }

@@ -1,18 +1,32 @@
 package app
 
 import (
-	Inversify "github.com/alekns/go-inversify"
+	"github.com/spf13/viper"
 	AppConfig "github.com/webalytic.go/cmd/handler/config"
 	CommonCfg "github.com/webalytic.go/common/config"
 	RedisBroker "github.com/webalytic.go/common/redis"
+	"go.uber.org/fx"
 )
 
-func Container() Inversify.Container {
-	container := Inversify.NewContainer("handler")
-	container.Bind("name").To("loghandler")
-	container = CommonCfg.Container(container)
-	container.Bind("appConfig").To(&AppConfig.LogHandlerConfig{Container: container})
-	container.Bind("redisConfig").To(&CommonCfg.RedisConfig{Container: container})
-	container = RedisBroker.Container(container)
-	return container
+func Container() fx.Option {
+	appCfgOption := fx.Options(fx.Provide(func() *CommonCfg.AppConfig {
+		return &CommonCfg.AppConfig{
+			Name: "loghandler",
+		}
+	}))
+	commonCfgOption := CommonCfg.Container()
+	handlerCfgOption := fx.Options(fx.Provide((func(v *viper.Viper) *AppConfig.LogHandlerConfig {
+		return &AppConfig.LogHandlerConfig{
+			Viper: v,
+		}
+	})))
+
+	redisBroker := RedisBroker.Container()
+
+	return fx.Options(
+		appCfgOption,
+		commonCfgOption,
+		handlerCfgOption,
+		redisBroker,
+	)
 }
