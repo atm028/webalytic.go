@@ -85,34 +85,33 @@ func (broker *RedisBroker) readStream() {
 }
 
 func (broker *RedisBroker) readGroupStream() {
-
+	broker.logger.Info("readGroupStream:starting for consumer: %s, group: %s, streams: %s", broker.consumer, "log-handlers", "collector-stream")
 	for {
 		entries, _ := broker.redis.XReadGroup(&redis.XReadGroupArgs{
-			Group:    "group",
+			Group:    "log-handlers",
 			Consumer: broker.consumer,
-			Streams:  []string{"stream", ">"},
+			Streams:  []string{"collector-stream", ">"},
 		}).Result()
 		for _, entry := range entries {
-			broker.logger.Info("readGroupStream: event: ", entry)
+			client := broker.clients[entry.Stream]
+			messages := entry.Messages
+			for _, msg := range messages {
+				client.evtChannel <- msg
+			}
 		}
 	}
 }
 
-func (broker *RedisBroker) createGroupService(channel string, group string) error {
-	err := broker.redis.XGroupCreate(channel, group, "0").Err()
-	if err != nil {
-		broker.logger.Error("Error: createGroupService: ", err)
-	}
-	return err
+func (broker *RedisBroker) createGroupStream(channel string, group string) {
+	stat := broker.redis.XGroupCreateMkStream(channel, group, "$").Err()
+	broker.logger.Debug("createGroupService: stat: ", stat)
 }
 
-func Container() fx.Option {
+func Container(consumerName string) fx.Option {
 	return fx.Options(fx.Provide(func(
 		logger bunyan.Logger,
-		commonAppCfg *CommonCfg.AppConfig,
-		redisCfg *CommonCfg.RedisConfig,
-	) *RedisBroker {
-		logger.Debug("Init RedisStreamEventBroker")
+		redisCfg *CommonCfg.RedisConfig) *RedisBroker {
+		logger.Debug("Init RedisStreamEventBroker with consumer name = %s", consumerName)
 		logger.Debug("Redis broker: ", redisCfg)
 
 		broker := &RedisBroker{
@@ -121,9 +120,13 @@ func Container() fx.Option {
 			}),
 			clients:  make(map[string]ClientInfo),
 			logger:   logger,
-			consumer: commonAppCfg.Name,
+			consumer: consumerName,
 		}
 		logger.Debug("Created broker on redis server: ", broker.redis.Options().Addr)
+
+		broker.createGroupStream(redisCfg.StreamName(), redisCfg.GroupName())
+		logger.Debug("createGroupStream done")
+
 		go broker.readStream()
 		go broker.readGroupStream()
 

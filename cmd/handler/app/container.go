@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/spf13/viper"
 	AppConfig "github.com/webalytic.go/cmd/handler/config"
 	CommonCfg "github.com/webalytic.go/common/config"
@@ -9,22 +10,27 @@ import (
 )
 
 func Container() fx.Option {
-	appCfgOption := fx.Options(fx.Provide(func() *CommonCfg.AppConfig {
-		return &CommonCfg.AppConfig{
-			Name: "loghandler",
-		}
-	}))
 	commonCfgOption := CommonCfg.Container()
-	handlerCfgOption := fx.Options(fx.Provide((func(v *viper.Viper) *AppConfig.LogHandlerConfig {
+	logger := fx.Option(fx.Provide(func(v *viper.Viper) bunyan.Logger {
+		l := CommonCfg.Logger{
+			Cfg: &CommonCfg.LoggerConfig{
+				Viper: v,
+			},
+		}
+		return l.GetLogger("collector")
+	}))
+	handlerCfgOption := fx.Options(fx.Provide(func(
+		v *viper.Viper,
+	) *AppConfig.LogHandlerConfig {
 		return &AppConfig.LogHandlerConfig{
 			Viper: v,
 		}
-	})))
+	}))
 
-	redisBroker := RedisBroker.Container()
+	redisBroker := RedisBroker.Container("handler")
 
 	return fx.Options(
-		appCfgOption,
+		logger,
 		commonCfgOption,
 		handlerCfgOption,
 		redisBroker,

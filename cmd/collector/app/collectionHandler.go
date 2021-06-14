@@ -7,10 +7,14 @@ import (
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	AppConfig "github.com/webalytic.go/cmd/collector/config"
+	CommonCfg "github.com/webalytic.go/common/config"
 	RedisBroker "github.com/webalytic.go/common/redis"
 )
 
-func CollectHandler(logger bunyan.Logger, broker *RedisBroker.RedisBroker, cfg *AppConfig.CollectorConfig) http.HandlerFunc {
+func CollectHandler(
+	logger bunyan.Logger, broker *RedisBroker.RedisBroker,
+	cfg *AppConfig.CollectorConfig,
+	redisCfg *CommonCfg.RedisConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Debug("Collect handler")
 		var payment Payment
@@ -28,8 +32,8 @@ func CollectHandler(logger bunyan.Logger, broker *RedisBroker.RedisBroker, cfg *
 		if err != nil {
 			logger.Error(err)
 		}
-		logger.Debug("Endpoint collect payment: ", string(out))
-		broker.Publish(cfg.Channel(), out)
+		logger.Debug("Endpoint collect payment: %s, channel: %s", string(out), redisCfg.StreamName())
+		broker.Publish(redisCfg.StreamName(), out)
 
 		fmt.Fprintf(w, "OK")
 	}

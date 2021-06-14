@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/webalytic.go/cmd/handler/app"
 	AppConfig "github.com/webalytic.go/cmd/handler/config"
+	CommonCfg "github.com/webalytic.go/common/config"
 	RedisBroker "github.com/webalytic.go/common/redis"
 	"go.uber.org/fx"
 )
@@ -23,11 +24,12 @@ func main() {
 		container,
 		fx.Invoke(func(
 			appConfig *AppConfig.LogHandlerConfig,
+			redisCfg *CommonCfg.RedisConfig,
 			broker *RedisBroker.RedisBroker,
 			logger bunyan.Logger,
 		) {
 			collectorRedisChannel := make(chan redis.XMessage)
-			broker.Subscribe(appConfig.Channel(), collectorRedisChannel)
+			broker.Subscribe(redisCfg.StreamName(), collectorRedisChannel)
 			go app.RedisEventBrokerHandler(logger, broker, appConfig, collectorRedisChannel)
 
 			router := mux.NewRouter().StrictSlash(true)

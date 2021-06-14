@@ -1,17 +1,30 @@
 package config
 
 import (
+	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/spf13/viper"
 )
 
 type ILogHandlerConfig interface {
+	Name() string
 	Port() int
 	Level() string
 	Channel() string
 }
 
 type LogHandlerConfig struct {
-	Viper *viper.Viper
+	Viper  *viper.Viper
+	logger bunyan.Logger
+}
+
+func (c LogHandlerConfig) Name() string {
+	c.Viper.SetDefault("handler.name", "loghandler")
+	c.Viper.BindEnv("name")
+	name := c.Viper.GetString("name")
+	if len(name) == 0 {
+		name = c.Viper.GetString("handler.name")
+	}
+	return name
 }
 
 func (c LogHandlerConfig) Port() int {

@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+    redis:
+        image: "redis:6.2.3"
+        container_name: "webalytic_redis"
+        restart: always
+        ports: 
+            - 6379:6379
+        networks: 
+            webalytic_net:
+                ipv4_address: 172.28.1.2
+
+    collector:
+        image: "dev_collector"
+        container_name: "webalytic_collector"
+        restart: always
+        environment: 
+            - APP_NAME=collector
+            - REDIS_HOST=${REDIS_HOST}
+            - REDIS_STREAM=${REDIS_STREAM}
+            - REDIS_GROUP=${REDIS_GROUP}
+        ports: 
+            - 8090:8090
+        networks: 
+            webalytic_net:
+                ipv4_address: 172.28.1.3
+
+    hander:
+        image: "dev_handler"
+        container_name: "webalytic_handler"
+        restart: always
+        environment: 
+            - APP_NAME=handler
+            - REDIS_HOST=${REDIS_HOST}
+            - REDIS_STREAM=${REDIS_STREAM}
+            - REDIS_GROUP=${REDIS_GROUP}
+        ports: 
+            - 8091:8091
+        networks: 
+            webalytic_net:
+                ipv4_address: 172.28.1.4
+
+networks:
+    webalytic_net:
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.28.0.0/16

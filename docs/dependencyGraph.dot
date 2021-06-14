@@ -1,13 +1,25 @@
 digraph g {
     graph [fontsize=20 labelloc="t" label="DI" splines=true overlap=false rankdir="TB"]
 
-    "CollectorConfig" [
+    "Viper" [
         style="filled"
         penwidth=1
         fillcolor="white"
         shape="oval"
     ];
-    "HandlerConfig" [
+    "Sequelize" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "CollectorAppConfig" [
+        style="filled"
+        penwidth=1
+        fillcolor="white"
+        shape="oval"
+    ];
+    "HandlerAppConfig" [
         style="filled"
         penwidth=1
         fillcolor="white"
@@ -81,16 +93,29 @@ digraph g {
     ];
 
     RedisConfig -> RedisEventBroker
-    LoggerConfig -> Logger
-    ClickHouseConfig -> ClickHouse
-    CollectorConfig -> CollectorApp
-    RedisEventBroker -> CollectorApp
-    CollectorHttpHandler -> CollectorApp
-    Logger -> CollectorApp
+    RedisEventBroker -> RedisEventBrokerHandler
 
-    RedisEventBrokerHandler -> HandlerApp
+    ClickHouseConfig -> ClickHouse
     ClickHouse -> RedisEventBrokerHandler
-    HandlerConfig -> HandlerApp
-    RedisEventBroker -> HandlerApp
-    Logger -> HandlerApp
+
+    LoggerConfig -> Logger
+
+    Viper -> LoggerConfig
+    Viper -> RedisConfig
+    Viper -> CollectorAppConfig
+    Viper -> HandlerAppConfig
+    Viper -> ClickHouseConfig
+    Viper -> DbConfig
+
+
+    DbConfig ->Sequelize
+    Sequelize -> CollectorApp
+    Sequelize -> HandlerApp
+
+    CollectorAppConfig -> CollectorApp
+    CollectorHttpHandler -> CollectorApp
+    RedisEventBroker -> CollectorApp
+
+    HandlerAppConfig -> HandlerApp
+    RedisEventBrokerHandler -> HandlerApp
 }
