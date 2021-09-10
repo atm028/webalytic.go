@@ -15,6 +15,7 @@ type IRedisEventBroker interface {
 	Unsubscribe(channel string)
 	Publish(channel string, msg []byte)
 	Ack(channel string, id string)
+	GroupAck(id string)
 }
 
 type ClientInfo struct {
@@ -23,10 +24,12 @@ type ClientInfo struct {
 }
 
 type RedisBroker struct {
-	redis    *redis.Client
-	clients  map[string]ClientInfo
-	logger   bunyan.Logger
-	consumer string
+	redis       *redis.Client
+	clients     map[string]ClientInfo
+	logger      bunyan.Logger
+	consumer    string
+	streamName  string
+	handlerName string
 }
 
 func (broker *RedisBroker) Subscribe(channel string, evtChannel chan redis.XMessage) {
@@ -59,7 +62,14 @@ func (broker *RedisBroker) Ack(channel string, id string) {
 	broker.redis.XDel(channel, id)
 }
 
+func (broker *RedisBroker) GroupAck(id string) {
+	broker.logger.Debug(fmt.Sprintf("ACK for %s", id))
+	broker.redis.XAck(broker.streamName, broker.handlerName, id)
+}
+
 func (broker *RedisBroker) readStream() {
+	broker.logger.Info("readStream:starting")
+	broker.logger.Debug("readStream:clients:", broker.clients)
 	for {
 		StreamsTmplt := []string{}
 		for k, v := range broker.clients {
@@ -73,6 +83,7 @@ func (broker *RedisBroker) readStream() {
 		}).Result()
 
 		for _, entry := range entries {
+			broker.logger.Debug("readStream: entry: ", entry)
 			client := broker.clients[entry.Stream]
 			messages := entry.Messages
 			for _, msg := range messages {
@@ -93,6 +104,7 @@ func (broker *RedisBroker) readGroupStream() {
 			Streams:  []string{"collector-stream", ">"},
 		}).Result()
 		for _, entry := range entries {
+			broker.logger.Debug("readGroupStream: entry: ", entry)
 			client := broker.clients[entry.Stream]
 			messages := entry.Messages
 			for _, msg := range messages {
@@ -118,16 +130,19 @@ func Container(consumerName string) fx.Option {
 			redis: redis.NewClient(&redis.Options{
 				Addr: fmt.Sprintf("%s:%d", redisCfg.Host(), redisCfg.Port()),
 			}),
-			clients:  make(map[string]ClientInfo),
-			logger:   logger,
-			consumer: consumerName,
+			clients:     make(map[string]ClientInfo),
+			logger:      logger,
+			consumer:    consumerName,
+			streamName:  redisCfg.StreamName(),
+			handlerName: redisCfg.HandlerName(),
 		}
 		logger.Debug("Created broker on redis server: ", broker.redis.Options().Addr)
 
 		broker.createGroupStream(redisCfg.StreamName(), redisCfg.GroupName())
 		logger.Debug("createGroupStream done")
 
-		go broker.readStream()
+		//TODO: publication to stream and group at the same time, so duplicates records in Clickhouse
+		//go broker.readStream()
 		go broker.readGroupStream()
 
 		return broker

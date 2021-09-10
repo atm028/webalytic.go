@@ -12,6 +12,7 @@ import (
 	"github.com/webalytic.go/cmd/handler/app"
 	AppConfig "github.com/webalytic.go/cmd/handler/config"
 	CommonCfg "github.com/webalytic.go/common/config"
+	Datasources "github.com/webalytic.go/common/datasources"
 	RedisBroker "github.com/webalytic.go/common/redis"
 	"go.uber.org/fx"
 )
@@ -26,16 +27,33 @@ func main() {
 			appConfig *AppConfig.LogHandlerConfig,
 			redisCfg *CommonCfg.RedisConfig,
 			broker *RedisBroker.RedisBroker,
+			clickhouse *Datasources.ClickHouse,
 			logger bunyan.Logger,
+			ackRedisChannel chan string,
 		) {
 			collectorRedisChannel := make(chan redis.XMessage)
 			broker.Subscribe(redisCfg.StreamName(), collectorRedisChannel)
-			go app.RedisEventBrokerHandler(logger, broker, appConfig, collectorRedisChannel)
+			go app.RedisEventBrokerHandler(
+				logger,
+				broker,
+				clickhouse,
+				appConfig,
+				collectorRedisChannel)
+
+			//Channel for acknowledgement handled messages from redis when they are saved into the DB
+			go func() {
+				for {
+					key := <-ackRedisChannel
+					if len(key) != 0 {
+						broker.GroupAck(key)
+					}
+				}
+			}()
 
 			router := mux.NewRouter().StrictSlash(true)
 			port := appConfig.Port()
 
-			logger.Info("Started service at port: ", port)
+			logger.Info(fmt.Sprintf("Started service at port: %d", port))
 			log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router))
 		}),
 	)

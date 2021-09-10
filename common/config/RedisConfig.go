@@ -8,6 +8,7 @@ type IRedisConfig interface {
 	Port() int
 	Host() string
 	StreamName() string
+	HandlerName() string
 	GroupName() string
 }
 type RedisConfig struct {
@@ -35,6 +36,18 @@ func (c RedisConfig) Host() string {
 		host = c.Viper.GetString("redis.host")
 	}
 	return host
+}
+
+func (c RedisConfig) HandlerName() string {
+	c.Viper.SetEnvPrefix("REDIS")
+	c.Viper.BindEnv("handler")
+	name := c.Viper.GetString("handler")
+
+	if len(name) == 0 {
+		c.Viper.SetDefault("redis.handler", "")
+		name = c.Viper.GetString("redis.handler")
+	}
+	return name
 }
 
 func (c RedisConfig) StreamName() string {

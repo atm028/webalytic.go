@@ -13,7 +13,9 @@ func Container() fx.Option {
 		v.SetConfigName("default")
 		v.SetConfigType("yaml")
 		v.AddConfigPath("./common/config")
+		v.AddConfigPath("/Users/tmorozov/go/src/github.com/webalytic.go/common/config")
 		v.AddConfigPath("./")
+		v.AutomaticEnv()
 		err := v.ReadInConfig()
 		if err != nil {
 			fmt.Println("Unable to read config")
@@ -31,6 +33,12 @@ func Container() fx.Option {
 		}
 	}))
 
+	ClickHouse := fx.Options(fx.Provide(func(v *viper.Viper) *ClickhouseConfig {
+		return &ClickhouseConfig{
+			Viper: v,
+		}
+	}))
+
 	LoggerObj := fx.Options(fx.Provide(func(v *viper.Viper) *Logger {
 		return &Logger{
 			Cfg: &LoggerConfig{
@@ -39,5 +47,9 @@ func Container() fx.Option {
 		}
 	}))
 
-	return fx.Options(Viper, Redis, LoggerObj)
+	return fx.Options(
+		Viper,
+		Redis,
+		ClickHouse,
+		LoggerObj)
 }

@@ -1,6 +1,7 @@
 FROM golang:1.16.4
 
 RUN mkdir /webalytic
+RUN mkdir /mnt/log
 COPY ./ /webalytic
 WORKDIR /webalytic
 
@@ -10,7 +11,6 @@ RUN rm -rf ./build/*
 RUN go build -o ./build/handler ./cmd/handler/server.go
 RUN cp -rf ./build/handler /opt/handler
 WORKDIR /opt
-RUN mkdir /opt/logs
 RUN rm -rf /webalytic
 RUN chmod +x ./handler
 

@@ -10,6 +10,7 @@ import (
 )
 
 func Container() fx.Option {
+	componentName := "collector"
 	commonCfgOption := CommonCfg.Container()
 	logger := fx.Option(fx.Provide(func(v *viper.Viper) bunyan.Logger {
 		l := CommonCfg.Logger{
@@ -17,7 +18,7 @@ func Container() fx.Option {
 				Viper: v,
 			},
 		}
-		return l.GetLogger("collector")
+		return l.GetLogger(componentName)
 	}))
 	handlerOption := fx.Options(fx.Provide(CollectHandler))
 	collectorCfgOption := fx.Options(fx.Provide(func(v *viper.Viper) *AppConfig.CollectorConfig {
@@ -26,7 +27,7 @@ func Container() fx.Option {
 		}
 	}))
 
-	redisBroker := RedisBroker.Container("collector")
+	redisBroker := RedisBroker.Container(componentName)
 
 	return fx.Options(
 		logger,
