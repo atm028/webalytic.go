@@ -6,8 +6,17 @@ import (
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/go-redis/redis"
+	"github.com/prometheus/client_golang/prometheus"
 	CommonCfg "github.com/webalytic.go/common/config"
 	"go.uber.org/fx"
+)
+
+var (
+	handlerMessagesNumberFromRedis = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name:      "handler_number_messages_from_redis",
+		Subsystem: "Handler",
+		Help:      "Number of messages received from Redis by Handler",
+	})
 )
 
 type IRedisEventBroker interface {
@@ -107,6 +116,7 @@ func (broker *RedisBroker) readGroupStream() {
 			broker.logger.Debug("readGroupStream: entry: ", entry)
 			client := broker.clients[entry.Stream]
 			messages := entry.Messages
+			handlerMessagesNumberFromRedis.Set(float64(len(messages)))
 			for _, msg := range messages {
 				client.evtChannel <- msg
 			}
@@ -140,6 +150,8 @@ func Container(consumerName string) fx.Option {
 
 		broker.createGroupStream(redisCfg.StreamName(), redisCfg.GroupName())
 		logger.Debug("createGroupStream done")
+
+		prometheus.MustRegister(handlerMessagesNumberFromRedis)
 
 		//TODO: publication to stream and group at the same time, so duplicates records in Clickhouse
 		//go broker.readStream()

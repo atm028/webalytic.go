@@ -14,6 +14,7 @@ require (
 	github.com/jstemmer/gotags v1.4.1 // indirect
 	github.com/kisielk/errcheck v1.6.0 // indirect
 	github.com/klauspost/asmfmt v1.3.0 // indirect
+	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
 	github.com/zmb3/gogetdoc v0.0.0-20190228002656-b37376c5da6a // indirect

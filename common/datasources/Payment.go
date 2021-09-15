@@ -27,5 +27,4 @@ type Payment struct {
 	Field8            string    `json: "fied8"`
 	Field9            string    `json: "fied9"`
 	Field10           string    `json: "fied10"`
-	CacheKey          string
 }

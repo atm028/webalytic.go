@@ -13,6 +13,9 @@ import (
 	AppConfig "github.com/webalytic.go/cmd/collector/config"
 	RedisBroker "github.com/webalytic.go/common/redis"
 	"go.uber.org/fx"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -32,6 +35,16 @@ func main() {
 
 			router := mux.NewRouter().StrictSlash(true)
 			router.HandleFunc("/collect", httpCollectorHandler).Methods("POST")
+
+			//prometheus.MustRegister(prometheus.NewGoCollector())
+			//prometheus.MustRegister(prometheus.NewBuildInfoCollector())
+
+			router.Handle("/metrics", promhttp.HandlerFor(
+				prometheus.DefaultGatherer,
+				promhttp.HandlerOpts{
+					EnableOpenMetrics: true,
+				},
+			))
 			port := appConfig.Port()
 
 			logger.Info("Started service on oprt ", port)

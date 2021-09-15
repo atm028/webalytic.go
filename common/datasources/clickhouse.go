@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
+	"github.com/prometheus/client_golang/prometheus"
 	CommonCfg "github.com/webalytic.go/common/config"
 	"go.uber.org/fx"
 
@@ -16,8 +17,16 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	handlerFlushedRecordsCnt = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "handler_flushed_records",
+		Subsystem: "Handler",
+		Help:      "Number of records flushed into the DB",
+	})
+)
+
 type IClickHouse interface {
-	CreatePayment(data *Payment) error
+	CreateData(key string, data *Payment) error
 	FindPayment(req string, val string) (*Payment, error)
 	flushTimer() *chan struct{}
 	flush()
@@ -25,7 +34,7 @@ type IClickHouse interface {
 
 type ClickHouse struct {
 	Db            *gorm.DB
-	payments      []*Payment
+	payments      map[string]*Payment
 	count         int
 	ackCh         chan string
 	mu            sync.Mutex
@@ -38,19 +47,31 @@ func (c *ClickHouse) flush() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.count > 0 {
-		res := c.Db.Create(&c.payments)
+	if c.Db == nil {
+		c.logger.Fatal("DB is null")
+	}
+
+	if c.Db != nil && c.count > 0 {
+		//TODO: the lngth should be sued with make but append increment the length. Check how to use it in the right way.
+		vals := make([]*Payment, 0)
+		for _, v := range c.payments {
+			vals = append(vals, v)
+		}
+
+		//res := c.Db.Model(&Payment{}).Create(&vals)
+		res := c.Db.Create(&vals)
 		if res.Error != nil {
 			c.logger.Error(fmt.Sprintf("Payments insert error: %s", res.Error))
 		} else {
 			c.logger.Debug(fmt.Sprintf("Flushed %d records", c.count))
-			for k := range c.payments {
-				key := c.payments[k].CacheKey
+
+			for key := range c.payments {
 				c.logger.Debug(fmt.Sprintf("Send ACK: %s", key))
 				c.ackCh <- key
+				handlerFlushedRecordsCnt.Inc()
+				delete(c.payments, key)
+				c.count--
 			}
-			c.payments = c.payments[:0]
-			c.count = 0
 		}
 	}
 }
@@ -72,10 +93,11 @@ func (c *ClickHouse) flushTimer() *chan bool {
 	return &done
 }
 
-func (c *ClickHouse) CreatePayment(data *Payment) {
+//TODO: Generalize interface from Payments to {}interface
+func (c *ClickHouse) CreatePayment(key string, data *Payment) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.payments = append(c.payments, data)
+	c.payments[key] = data
 	c.count++
 	if c.count >= c.FlushLimit {
 		c.flush()
@@ -98,6 +120,7 @@ func Clickhouse() fx.Option {
 		if err != nil {
 			logger.Fatal(fmt.Sprintf("Not able to connect to Clickhouse: %s", err))
 		}
+		prometheus.MustRegister(handlerFlushedRecordsCnt)
 		logger.Debug("Migration: Payment")
 		db.AutoMigrate(&Payment{})
 		db.Migrator().CreateTable(Payment{})
@@ -105,7 +128,7 @@ func Clickhouse() fx.Option {
 		ch := &ClickHouse{
 			Db:            db,
 			logger:        logger,
-			payments:      nil,
+			payments:      make(map[string]*Payment),
 			count:         0,
 			ackCh:         ackRedisChannel,
 			flushInterval: config.FlushInterval(),

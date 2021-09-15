@@ -9,6 +9,8 @@ import (
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/webalytic.go/cmd/handler/app"
 	AppConfig "github.com/webalytic.go/cmd/handler/config"
 	CommonCfg "github.com/webalytic.go/common/config"
@@ -51,6 +53,13 @@ func main() {
 			}()
 
 			router := mux.NewRouter().StrictSlash(true)
+
+			router.Handle("/metrics", promhttp.HandlerFor(
+				prometheus.DefaultGatherer,
+				promhttp.HandlerOpts{
+					EnableOpenMetrics: true,
+				},
+			))
 			port := appConfig.Port()
 
 			logger.Info(fmt.Sprintf("Started service at port: %d", port))

@@ -20,6 +20,7 @@ func Container() fx.Option {
 		}
 		return l.GetLogger(componentName)
 	}))
+	InitCollectHandler()
 	handlerOption := fx.Options(fx.Provide(CollectHandler))
 	collectorCfgOption := fx.Options(fx.Provide(func(v *viper.Viper) *AppConfig.CollectorConfig {
 		return &AppConfig.CollectorConfig{

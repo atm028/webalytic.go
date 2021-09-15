@@ -34,8 +34,7 @@ func RedisEventBrokerHandler(
 					logger.Error(fmt.Sprintf("Unable to parse to JSON message from event with ID: %s", event.ID))
 				} else {
 					logger.Debug(fmt.Sprintf("traceID: %s: ID: %s: %v", rcv.TraceID, event.ID, rcv))
-					rcv.CacheKey = event.ID
-					clickhouse.CreatePayment(&rcv)
+					clickhouse.CreatePayment(event.ID, &rcv)
 				}
 			}
 		}

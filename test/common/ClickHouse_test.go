@@ -19,11 +19,16 @@ func Container() fx.Option {
 	commonCfgOptions := CommonCfg.Container()
 	commonOptions := Common.Container(componentName)
 	clickhouse := Datasources.Clickhouse()
+	ackRedisChannel := fx.Option(fx.Provide(func() chan string {
+		ch := make(chan string)
+		return ch
+	}))
 
 	return fx.Options(
 		commonCfgOptions,
 		commonOptions,
 		clickhouse,
+		ackRedisChannel,
 	)
 }
 
@@ -62,7 +67,7 @@ func TestCreateTableAndInsertRecord(t *testing.T) {
 				Field9:            "tests_field9",
 				Field10:           "tests_field10",
 			}
-			clickhouse.CreatePayment(&payment_in)
+			clickhouse.CreatePayment("key1", &payment_in)
 			time.Sleep(time.Second)
 			payment_out, _ := clickhouse.FindPayment("trace_id=?", "1")
 			assert.Equal(t, payment_in.Sum, payment_out.Sum)
