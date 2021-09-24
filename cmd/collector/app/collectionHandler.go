@@ -59,47 +59,53 @@ func InitCollectHandler() {
 	prometheus.MustRegister(collectRequesHandleLatency)
 }
 
+type ICollectHandler struct {
+	Handler http.HandlerFunc
+}
+
 func CollectHandler(
 	logger bunyan.Logger,
 	broker *RedisBroker.RedisBroker,
 	cfg *AppConfig.CollectorConfig,
-	redisCfg *CommonCfg.RedisConfig) http.HandlerFunc {
+	redisCfg *CommonCfg.RedisConfig) *ICollectHandler {
 	streamName := redisCfg.StreamName()
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		startTime := time.Now()
-		collectRequestCnt.Inc()
-		collectRequestInProgress.Inc()
-		logger.Debug("Collect handler")
-		var payment Datasources.Payment
-		if r.Body == nil {
-			errorNegRequestCnt.Inc()
-			logger.Error("Empty body is not allowed")
-			http.Error(w, "Empty body is not allowed", http.StatusBadRequest)
-			collectRequestInProgress.Dec()
-			return
-		}
-		err := json.NewDecoder(r.Body).Decode(&payment)
-		if err != nil {
-			errorNegRequestCnt.Inc()
-			logger.Error(err.Error())
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			collectRequestInProgress.Dec()
-			return
-		}
+	return &ICollectHandler{
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			startTime := time.Now()
+			collectRequestCnt.Inc()
+			collectRequestInProgress.Inc()
+			logger.Debug("Collect handler")
+			var payment Datasources.Payment
+			if r.Body == nil {
+				errorNegRequestCnt.Inc()
+				logger.Error("Empty body is not allowed")
+				http.Error(w, "Empty body is not allowed", http.StatusBadRequest)
+				collectRequestInProgress.Dec()
+				return
+			}
+			err := json.NewDecoder(r.Body).Decode(&payment)
+			if err != nil {
+				errorNegRequestCnt.Inc()
+				logger.Error(err.Error())
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				collectRequestInProgress.Dec()
+				return
+			}
 
-		payment.TraceID = getTrace(logger)
-		out, err := json.Marshal(payment)
-		if err != nil {
-			logger.Error(err)
-		}
-		logger.Debug("traceID: %s: Endpoint collect payment: %s, channel: %s", payment.TraceID, string(out), streamName)
-		broker.Publish(streamName, out)
+			payment.TraceID = getTrace(logger)
+			out, err := json.Marshal(payment)
+			if err != nil {
+				logger.Error(err)
+			}
+			logger.Debug("traceID: %s: Endpoint collect payment: %s, channel: %s", payment.TraceID, string(out), streamName)
+			broker.Publish(streamName, out)
 
-		collectRequestInProgress.Dec()
-		collectRequesHandleLatency.Observe(
-			float64(time.Since(startTime).Milliseconds()),
-		)
-		fmt.Fprintf(w, "OK")
+			collectRequestInProgress.Dec()
+			collectRequesHandleLatency.Observe(
+				float64(time.Since(startTime).Milliseconds()),
+			)
+			fmt.Fprintf(w, "OK")
+		},
 	}
 }

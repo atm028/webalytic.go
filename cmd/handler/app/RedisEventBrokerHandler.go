@@ -15,7 +15,7 @@ func RedisEventBrokerHandler(
 	logger bunyan.Logger,
 	broker *RedisBroker.RedisBroker,
 	clickhouse *Datasources.ClickHouse,
-	cfg *AppConfig.LogHandlerConfig,
+	cfg *AppConfig.HandlerConfig,
 	evtChannel chan redis.XMessage) {
 	for {
 		event := <-evtChannel

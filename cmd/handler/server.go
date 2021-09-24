@@ -26,7 +26,7 @@ func main() {
 	mainApp := fx.New(
 		container,
 		fx.Invoke(func(
-			appConfig *AppConfig.LogHandlerConfig,
+			appConfig *AppConfig.HandlerConfig,
 			redisCfg *CommonCfg.RedisConfig,
 			broker *RedisBroker.RedisBroker,
 			clickhouse *Datasources.ClickHouse,

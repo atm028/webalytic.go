@@ -5,6 +5,7 @@ import (
 )
 
 type ICollectorConfig interface {
+	Name() string
 	Port() int
 	Level() string
 	Channel() string
@@ -14,14 +15,17 @@ type CollectorConfig struct {
 	Viper *viper.Viper
 }
 
+func (c *CollectorConfig) Name() string {
+	c.Viper.SetEnvPrefix("APP")
+	c.Viper.SetDefault("name", "collector")
+	name := c.Viper.GetString("name")
+	return name
+}
+
 func (c *CollectorConfig) Port() int {
 	c.Viper.SetEnvPrefix("APP")
 	c.Viper.SetDefault("port", 8090)
 	port := c.Viper.GetInt("port")
-	if port == 0 {
-		c.Viper.BindEnv("port")
-		port = c.Viper.GetInt("collector.port")
-	}
 	return port
 }
 

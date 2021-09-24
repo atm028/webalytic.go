@@ -11,25 +11,29 @@ import (
 )
 
 func Container() fx.Option {
-	componentName := "handler"
+	name := fx.Option(fx.Provide(func(cfg *AppConfig.HandlerConfig) string {
+		return cfg.Name()
+	}))
 	commonCfgOption := CommonCfg.Container()
-	logger := fx.Option(fx.Provide(func(v *viper.Viper) bunyan.Logger {
+	logger := fx.Option(fx.Provide(func(
+		v *viper.Viper,
+		cfg *AppConfig.HandlerConfig) bunyan.Logger {
 		l := CommonCfg.Logger{
 			Cfg: &CommonCfg.LoggerConfig{
 				Viper: v,
 			},
 		}
-		return l.GetLogger(componentName)
+		return l.GetLogger(cfg.Name())
 	}))
 	handlerCfgOption := fx.Options(fx.Provide(func(
 		v *viper.Viper,
-	) *AppConfig.LogHandlerConfig {
-		return &AppConfig.LogHandlerConfig{
+	) *AppConfig.HandlerConfig {
+		return &AppConfig.HandlerConfig{
 			Viper: v,
 		}
 	}))
 
-	redisBroker := RedisBroker.Container(componentName)
+	redisBroker := RedisBroker.Container()
 	clickhouse := Datasources.Clickhouse()
 	ackRedisChannel := fx.Options(fx.Provide(func() chan string {
 		ch := make(chan string)
@@ -38,6 +42,7 @@ func Container() fx.Option {
 
 	return fx.Options(
 		logger,
+		name,
 		commonCfgOption,
 		handlerCfgOption,
 		redisBroker,

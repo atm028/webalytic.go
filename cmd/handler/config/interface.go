@@ -5,19 +5,19 @@ import (
 	"github.com/spf13/viper"
 )
 
-type ILogHandlerConfig interface {
+type IHandlerConfig interface {
 	Name() string
 	Port() int
 	Level() string
 	Channel() string
 }
 
-type LogHandlerConfig struct {
+type HandlerConfig struct {
 	Viper  *viper.Viper
 	logger bunyan.Logger
 }
 
-func (c LogHandlerConfig) Name() string {
+func (c HandlerConfig) Name() string {
 	c.Viper.SetEnvPrefix("APP")
 	c.Viper.SetDefault("name", "handler")
 	c.Viper.BindEnv("name")
@@ -28,7 +28,7 @@ func (c LogHandlerConfig) Name() string {
 	return name
 }
 
-func (c LogHandlerConfig) Port() int {
+func (c HandlerConfig) Port() int {
 	c.Viper.SetEnvPrefix("APP")
 	c.Viper.SetDefault("port", 8091)
 	port := c.Viper.GetInt("port")
@@ -39,7 +39,7 @@ func (c LogHandlerConfig) Port() int {
 	return port
 }
 
-func (c LogHandlerConfig) Level() string {
+func (c HandlerConfig) Level() string {
 	c.Viper.SetEnvPrefix("APP")
 	c.Viper.SetDefault("level", "DEBUG")
 	level := c.Viper.GetString("level")
@@ -50,7 +50,7 @@ func (c LogHandlerConfig) Level() string {
 	return level
 }
 
-func (c LogHandlerConfig) Channel() string {
+func (c HandlerConfig) Channel() string {
 	c.Viper.SetEnvPrefix("APP")
 	c.Viper.SetDefault("channel", "COLLECTOR")
 	ch := c.Viper.GetString("channel")

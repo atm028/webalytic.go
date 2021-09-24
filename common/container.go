@@ -4,6 +4,7 @@ import (
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/spf13/viper"
 	CommonCfg "github.com/webalytic.go/common/config"
+	Consul "github.com/webalytic.go/common/consul"
 	"go.uber.org/fx"
 )
 
@@ -17,5 +18,7 @@ func Container(name string) fx.Option {
 		return l.GetLogger(name)
 	}))
 
-	return fx.Options(logger)
+	consul := Consul.Container()
+
+	return fx.Options(logger, consul)
 }

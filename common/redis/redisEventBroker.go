@@ -129,11 +129,12 @@ func (broker *RedisBroker) createGroupStream(channel string, group string) {
 	broker.logger.Debug("createGroupService: stat: ", stat)
 }
 
-func Container(consumerName string) fx.Option {
+func Container() fx.Option {
 	return fx.Options(fx.Provide(func(
 		logger bunyan.Logger,
-		redisCfg *CommonCfg.RedisConfig) *RedisBroker {
-		logger.Debug("Init RedisStreamEventBroker with consumer name = %s", consumerName)
+		redisCfg *CommonCfg.RedisConfig,
+		name string) *RedisBroker {
+		logger.Debug("Init RedisStreamEventBroker with consumer name = %s", name)
 		logger.Debug("Redis broker: ", redisCfg)
 
 		broker := &RedisBroker{
@@ -142,7 +143,7 @@ func Container(consumerName string) fx.Option {
 			}),
 			clients:     make(map[string]ClientInfo),
 			logger:      logger,
-			consumer:    consumerName,
+			consumer:    name,
 			streamName:  redisCfg.StreamName(),
 			handlerName: redisCfg.HandlerName(),
 		}

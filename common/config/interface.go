@@ -27,6 +27,12 @@ func Container() fx.Option {
 		return v
 	}))
 
+	Consul := fx.Options(fx.Provide(func(v *viper.Viper) *ConsulConfig {
+		return &ConsulConfig{
+			Viper: v,
+		}
+	}))
+
 	Redis := fx.Options(fx.Provide(func(v *viper.Viper) *RedisConfig {
 		return &RedisConfig{
 			Viper: v,
@@ -50,6 +56,7 @@ func Container() fx.Option {
 	return fx.Options(
 		Viper,
 		Redis,
+		Consul,
 		ClickHouse,
 		LoggerObj)
 }
