@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	AppConfig "github.com/webalytic.go/cmd/collector/config"
 	CommonCfg "github.com/webalytic.go/common/config"
@@ -76,7 +77,10 @@ func CollectHandler(
 			collectRequestCnt.Inc()
 			collectRequestInProgress.Inc()
 			logger.Debug("Collect handler")
-			var payment Datasources.Payment
+			vars := mux.Vars(r)
+			logger.Debug(fmt.Sprintf("Request vars: %s", vars["category"]))
+			//var payment Datasources.Payment
+			var payment Datasources.User
 			if r.Body == nil {
 				errorNegRequestCnt.Inc()
 				logger.Error("Empty body is not allowed")

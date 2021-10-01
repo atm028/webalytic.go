@@ -38,7 +38,7 @@ func main() {
 			broker.Subscribe(appConfig.Channel(), collectorRedisChannel)
 
 			router := mux.NewRouter().StrictSlash(true)
-			router.HandleFunc("/collect", httpCollectorHandler.Handler).Methods("POST")
+			router.HandleFunc("/collect/{category}", httpCollectorHandler.Handler).Methods("POST")
 
 			router.Handle("/metrics", promhttp.HandlerFor(
 				prometheus.DefaultGatherer,

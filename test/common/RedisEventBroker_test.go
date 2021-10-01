@@ -1,4 +1,4 @@
-package testing
+package wbut
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func SetContainerUp() fx.Option {
 	componentName := "test"
 	commonCfgOption := CommonCfg.Container()
 	commonOptions := Common.Container(componentName)
-	redisBroker := RedisBroker.Container(componentName)
+	redisBroker := RedisBroker.Container()
 	return fx.Options(
 		commonOptions,
 		commonCfgOption,

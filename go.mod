@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/ClickHouse/clickhouse-go v1.4.5 // indirect
 	github.com/bhoriuchi/go-bunyan v0.0.0-20170831222709-8815b5fdce8c
+	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/davidrjenni/reftools v0.0.0-20210213085015-40322ffdc2e4 // indirect
 	github.com/fatih/motion v1.1.0 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible
@@ -16,6 +17,7 @@ require (
 	github.com/jstemmer/gotags v1.4.1 // indirect
 	github.com/kisielk/errcheck v1.6.0 // indirect
 	github.com/klauspost/asmfmt v1.3.0 // indirect
+	github.com/ompluscator/dynamic-struct v1.3.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
