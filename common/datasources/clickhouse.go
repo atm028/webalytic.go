@@ -26,7 +26,7 @@ var (
 )
 
 type IClickHouse interface {
-	CreateData(key string, data *Payment) error
+	CreateRecord(key string, data *Payment) error
 	FindPayment(req string, val string) (*Payment, error)
 	flushTimer() *chan struct{}
 	flush()
@@ -94,7 +94,8 @@ func (c *ClickHouse) flushTimer() *chan bool {
 }
 
 //TODO: Generalize interface from Payments to {}interface
-func (c *ClickHouse) CreatePayment(key string, data *Payment) {
+
+func (c *ClickHouse) CreateRecord(key string, data *Payment) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.payments[key] = data
@@ -102,6 +103,7 @@ func (c *ClickHouse) CreatePayment(key string, data *Payment) {
 	if c.count >= c.FlushLimit {
 		c.flush()
 	}
+	return nil
 }
 
 func (c *ClickHouse) FindPayment(req string, val string) (*Payment, error) {

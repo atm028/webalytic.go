@@ -1,6 +1,12 @@
 package Datasources
 
-import "time"
+import (
+	"encoding/json"
+	"io"
+	"time"
+
+	"github.com/bhoriuchi/go-bunyan/bunyan"
+)
 
 type Payment struct {
 	TraceID           string    `gorm:"primaryKey;autoIncrement:true;unique"`
@@ -27,4 +33,20 @@ type Payment struct {
 	Field8            string    `json: "fied8"`
 	Field9            string    `json: "fied9"`
 	Field10           string    `json: "fied10"`
+}
+
+func PaymentHelper(r io.Reader, traceID string, logger bunyan.Logger) ([]byte, error) {
+	var payment Payment
+	err := json.NewDecoder(r).Decode(&payment)
+	if err != nil {
+
+		return nil, err
+	}
+
+	payment.TraceID = traceID
+	out, err := json.Marshal(payment)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }

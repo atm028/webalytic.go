@@ -3,7 +3,6 @@ package app
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -79,8 +78,7 @@ func CollectHandler(
 			logger.Debug("Collect handler")
 			vars := mux.Vars(r)
 			logger.Debug(fmt.Sprintf("Request vars: %s", vars["category"]))
-			//var payment Datasources.Payment
-			var payment Datasources.User
+
 			if r.Body == nil {
 				errorNegRequestCnt.Inc()
 				logger.Error("Empty body is not allowed")
@@ -88,21 +86,25 @@ func CollectHandler(
 				collectRequestInProgress.Dec()
 				return
 			}
-			err := json.NewDecoder(r.Body).Decode(&payment)
-			if err != nil {
-				errorNegRequestCnt.Inc()
-				logger.Error(err.Error())
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				collectRequestInProgress.Dec()
+			traceID := getTrace(logger)
+			var out []byte
+			var err error
+			switch vars["category"] {
+			case "payment":
+				out, err = Datasources.PaymentHelper(r.Body, traceID, logger)
+			default:
+				err = nil
+				out = nil
+				http.Error(w, "Empty body is not allowed", http.StatusBadRequest)
 				return
 			}
-
-			payment.TraceID = getTrace(logger)
-			out, err := json.Marshal(payment)
 			if err != nil {
-				logger.Error(err)
+				errorNegRequestCnt.Inc()
+				collectRequestInProgress.Dec()
+				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
-			logger.Debug("traceID: %s: Endpoint collect payment: %s, channel: %s", payment.TraceID, string(out), streamName)
+
+			logger.Debug("traceID: %s: Endpoint collect data: %s, type: %s, channel: %s", traceID, vars["category"], string(out), streamName)
 			broker.Publish(streamName, out)
 
 			collectRequestInProgress.Dec()

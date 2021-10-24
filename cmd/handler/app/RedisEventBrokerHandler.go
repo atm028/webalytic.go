@@ -6,16 +6,12 @@ import (
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/go-redis/redis"
-	AppConfig "github.com/webalytic.go/cmd/handler/config"
 	Datasources "github.com/webalytic.go/common/datasources"
-	RedisBroker "github.com/webalytic.go/common/redis"
 )
 
 func RedisEventBrokerHandler(
 	logger bunyan.Logger,
-	broker *RedisBroker.RedisBroker,
 	clickhouse *Datasources.ClickHouse,
-	cfg *AppConfig.HandlerConfig,
 	evtChannel chan redis.XMessage) {
 	for {
 		event := <-evtChannel
@@ -34,7 +30,7 @@ func RedisEventBrokerHandler(
 					logger.Error(fmt.Sprintf("Unable to parse to JSON message from event with ID: %s", event.ID))
 				} else {
 					logger.Debug(fmt.Sprintf("traceID: %s: ID: %s: %v", rcv.TraceID, event.ID, rcv))
-					clickhouse.CreatePayment(event.ID, &rcv)
+					clickhouse.CreateRecord(event.ID, &rcv)
 				}
 			}
 		}
