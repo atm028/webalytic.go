@@ -7,3 +7,6 @@ handler:
   port: 8091
   level: "DEBUG"
   channel: "COLLECTOR"
+
+redis:
+  stream: "collector-stream"

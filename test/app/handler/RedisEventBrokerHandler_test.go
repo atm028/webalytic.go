@@ -2,7 +2,11 @@ package wbut
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/go-redis/redis"
@@ -12,59 +16,63 @@ import (
 	"go.uber.org/fx"
 )
 
-//========================
-type DBMock struct {
-	callParams []interface{}
-}
-type Res struct {
-	Error error
-}
-
-func (c *DBMock) Create(value interface{}) {
-}
-
-func (c *DBMock) Find(out interface{}, conds ...interface{}) error {
-	return nil
-}
-
-//========================
-
 func SetContainerUp() fx.Option {
-	l, _ := bunyan.CreateLogger()
-	logger := fx.Option(fx.Provide(func() bunyan.Logger {
-		return l
-	}))
-
-	mockDB := new(DBMock)
-
-	clickhouse := &Datasources.ClickHouse{
-		Db: mockDB,
-	}
-	mockClickhouse1 := fx.Option(fx.Provide(func() *Datasources.ClickHouse {
-		return clickhouse
-	}))
-	return fx.Options(
-		logger,
-		mockClickhouse1,
-	)
+	container := app.Container()
+	return container
 }
 
 func TestSubscribeAndAbleToPublishAndReadFromStream(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	container := SetContainerUp()
+	traceID := fmt.Sprintf("%d", rand.Intn(10000))
+	payment := Datasources.Payment{
+		TraceID:           traceID,
+		Merchant:          "kamwnlsqjf",
+		Sum:               60,
+		SendCurrency:      "ru",
+		Project:           "qfdjstnulw",
+		Method:            "get",
+		Name:              "isdcvmcusz",
+		CardNumber:        "920236688367",
+		ExpireDate:        "11/22",
+		SecurityCode:      "123",
+		ReceiveCurrency:   "usd",
+		Rate:              65,
+		TransactionTime:   time.Now(),
+		TransactionStatus: "done",
+		Field1:            "",
+		Field2:            "",
+		Field3:            "",
+		Field4:            "",
+		Field5:            "",
+		Field6:            "",
+		Field7:            "",
+		Field8:            "",
+		Field9:            "",
+		Field10:           "",
+	}
+
 	app := fx.New(
 		container,
 		fx.Invoke(func(
 			logger bunyan.Logger,
 			clickhouse *Datasources.ClickHouse,
 		) {
+			out, _ := json.Marshal(&payment)
+			redisMsg := redis.XMessage{
+				ID: "testMessage1",
+				Values: map[string]interface{}{
+					"msg": string(out[:]),
+				},
+			}
+
 			ch := make(chan redis.XMessage)
-			go app.RedisEventBrokerHandler(
-				logger,
-				clickhouse,
-				ch,
-			)
-			assert.Equal(t, 1, 1)
+			go app.RedisEventBrokerHandler(logger, clickhouse, ch)
+			ch <- redisMsg
+			time.Sleep(2 * time.Second)
+			foundPayment, err := clickhouse.FindPayment("trace_id", traceID)
+			assert.Equal(t, err, nil)
+			assert.Equal(t, payment.TraceID, foundPayment.TraceID)
 			cancel()
 		}),
 	)

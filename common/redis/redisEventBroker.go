@@ -1,6 +1,7 @@
 package RedisBroker
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -77,12 +78,14 @@ func (broker *RedisBroker) GroupAck(id string) {
 }
 
 func (broker *RedisBroker) readStream() {
-	broker.logger.Info("readStream:starting")
+	broker.logger.Info(fmt.Sprintf("readStream:starting, streamName: %s", broker.streamName))
 	broker.logger.Debug("readStream:clients:", broker.clients)
 	for {
 		StreamsTmplt := []string{}
 		for k, v := range broker.clients {
-			StreamsTmplt = append(StreamsTmplt, k, v.lastID)
+			if k != broker.streamName {
+				StreamsTmplt = append(StreamsTmplt, k, v.lastID)
+			}
 		}
 
 		entries, _ := broker.redis.XRead(&redis.XReadArgs{
@@ -110,7 +113,7 @@ func (broker *RedisBroker) readGroupStream() {
 		entries, _ := broker.redis.XReadGroup(&redis.XReadGroupArgs{
 			Group:    "log-handlers",
 			Consumer: broker.consumer,
-			Streams:  []string{"collector-stream", ">"},
+			Streams:  []string{broker.streamName, ">"},
 		}).Result()
 		for _, entry := range entries {
 			broker.logger.Debug("readGroupStream: entry: ", entry)
@@ -118,6 +121,7 @@ func (broker *RedisBroker) readGroupStream() {
 			messages := entry.Messages
 			handlerMessagesNumberFromRedis.Set(float64(len(messages)))
 			for _, msg := range messages {
+				broker.logger.Debug("send to channel")
 				client.evtChannel <- msg
 			}
 		}
@@ -131,12 +135,25 @@ func (broker *RedisBroker) createGroupStream(channel string, group string) {
 
 func Container() fx.Option {
 	return fx.Options(fx.Provide(func(
+		lc fx.Lifecycle,
 		logger bunyan.Logger,
 		redisCfg *CommonCfg.RedisConfig,
 		name string) *RedisBroker {
 		logger.Debug("Init RedisStreamEventBroker with consumer name = %s", name)
 		logger.Debug("Redis broker: ", redisCfg)
 
+		lc.Append(
+			fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					logger.Debug("RedisEventBroker: OnStop hook")
+					prometheus.Unregister(handlerMessagesNumberFromRedis)
+
+					return nil
+				},
+			},
+		)
+
+		logger.Debug(fmt.Sprintf("Create RedisBroker wih streamName = %s", redisCfg.StreamName()))
 		broker := &RedisBroker{
 			redis: redis.NewClient(&redis.Options{
 				Addr: fmt.Sprintf("%s:%d", redisCfg.Host(), redisCfg.Port()),
@@ -154,8 +171,11 @@ func Container() fx.Option {
 
 		prometheus.MustRegister(handlerMessagesNumberFromRedis)
 
-		//TODO: publication to stream and group at the same time, so duplicates records in Clickhouse
-		//go broker.readStream()
+		/*
+			TODO: publication to stream and group at the same time,
+			so duplicates records in Clickhouse
+		*/
+		go broker.readStream()
 		go broker.readGroupStream()
 
 		return broker
