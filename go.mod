@@ -17,7 +17,7 @@ require (
 	github.com/jstemmer/gotags v1.4.1 // indirect
 	github.com/kisielk/errcheck v1.6.0 // indirect
 	github.com/klauspost/asmfmt v1.3.0 // indirect
-	github.com/ompluscator/dynamic-struct v1.3.0
+	github.com/ompluscator/dynamic-struct v1.3.0 // indirect
 	github.com/prometheus/client_golang v1.11.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
@@ -28,7 +28,7 @@ require (
 	go.uber.org/zap v1.19.1 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/sys v0.0.0-20210917161153-d61c044b1678 // indirect
-	golang.org/x/tools v0.1.5 // indirect
+	golang.org/x/tools v0.1.7 // indirect
 	golang.org/x/vgo v0.0.0-20180912184537-9d567625acf4 // indirect
 	gorm.io/driver/clickhouse v0.2.1
 	gorm.io/gorm v1.21.13

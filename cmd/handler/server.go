@@ -35,12 +35,7 @@ func main() {
 		) {
 			collectorRedisChannel := make(chan redis.XMessage)
 			broker.Subscribe(redisCfg.StreamName(), collectorRedisChannel)
-			go app.RedisEventBrokerHandler(
-				logger,
-				broker,
-				clickhouse,
-				appConfig,
-				collectorRedisChannel)
+			go app.RedisEventBrokerHandler(logger, clickhouse, collectorRedisChannel)
 
 			//Channel for acknowledgement handled messages from redis when they are saved into the DB
 			go func() {

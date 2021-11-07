@@ -56,7 +56,7 @@ func (c RedisConfig) StreamName() string {
 	name := c.Viper.GetString("stream")
 
 	if len(name) == 0 {
-		c.Viper.SetDefault("redis.stream", "")
+		c.Viper.SetDefault("redis.stream", "collector-stream")
 		name = c.Viper.GetString("redis.stream")
 	}
 	return name

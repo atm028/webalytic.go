@@ -67,7 +67,7 @@ func TestCreateTableAndInsertRecord(t *testing.T) {
 				Field9:            "tests_field9",
 				Field10:           "tests_field10",
 			}
-			clickhouse.CreatePayment("key1", &payment_in)
+			clickhouse.CreateRecord("key1", &payment_in)
 			time.Sleep(time.Second)
 			payment_out, _ := clickhouse.FindPayment("trace_id=?", "1")
 			assert.Equal(t, payment_in.Sum, payment_out.Sum)
