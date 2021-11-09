@@ -153,7 +153,10 @@ func Container() fx.Option {
 			},
 		)
 
-		logger.Debug(fmt.Sprintf("Create RedisBroker wih streamName = %s", redisCfg.StreamName()))
+		logger.Debug(fmt.Sprintf("Create RedisBroker wih streamName = %s on server %s:%d",
+			redisCfg.StreamName(),
+			redisCfg.Host(),
+			redisCfg.Port()))
 		broker := &RedisBroker{
 			redis: redis.NewClient(&redis.Options{
 				Addr: fmt.Sprintf("%s:%d", redisCfg.Host(), redisCfg.Port()),

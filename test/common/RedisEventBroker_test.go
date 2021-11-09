@@ -3,7 +3,6 @@ package wbut
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
@@ -24,7 +23,6 @@ type TestMsg struct {
 
 func TestRedisEventBroker(t *testing.T) {
 	SetContainerUp := func() fx.Option {
-		fmt.Println("==============SetContainerUp-------------")
 		componentName := "test"
 		commonCfgOption := CommonCfg.Container()
 		commonOptions := Common.Container(componentName)
@@ -68,7 +66,7 @@ func TestRedisEventBroker(t *testing.T) {
 				broker *RedisBroker.RedisBroker,
 			) {
 				ch := make(chan redis.XMessage)
-				chName := "collector-stream"
+				chName := "collector-stream-test"
 				broker.Subscribe(chName, ch)
 				msg := TestMsg{"1", "fild1", "field2"}
 
