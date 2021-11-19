@@ -1,4 +1,4 @@
-package wbut
+package config
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/spf13/viper"
-	CommonCfg "github.com/webalytic.go/common/config"
 )
 
 func SetUp() *viper.Viper {
@@ -32,7 +31,7 @@ func TestLoadRedisConfigFromDefaultConfig(t *testing.T) {
 	tmpPort := os.Getenv("REDIS_PORT")
 	os.Setenv("REDIS_PORT", "")
 	os.Setenv("REDIS_HOST", "")
-	redisConfig := CommonCfg.RedisConfig{Viper: viperObj}
+	redisConfig := RedisConfig{Viper: viperObj}
 	assert.Equal(t, redisConfig.Port(), 6379)
 	assert.Equal(t, redisConfig.Host(), "0.0.0.0")
 	os.Setenv("REDIS_PORT", tmpPort)
@@ -41,7 +40,7 @@ func TestLoadRedisConfigFromDefaultConfig(t *testing.T) {
 
 func TestLoadRedisEnvShouldBePriorForCollector(t *testing.T) {
 	viperObj := SetUp()
-	redisConfig := CommonCfg.RedisConfig{Viper: viperObj}
+	redisConfig := RedisConfig{Viper: viperObj}
 	viperObj.SetEnvPrefix("REDIS")
 	tmpHost := os.Getenv("REDIS_HOST")
 	tmpPort := os.Getenv("REDIS_PORT")
@@ -55,7 +54,7 @@ func TestLoadRedisEnvShouldBePriorForCollector(t *testing.T) {
 
 func TestLoadRedisEnvShouldBePriorForHandler(t *testing.T) {
 	viperObj := SetUp()
-	redisConfig := CommonCfg.RedisConfig{Viper: viperObj}
+	redisConfig := RedisConfig{Viper: viperObj}
 	tmpHost := os.Getenv("REDIS_HOST")
 	tmpPort := os.Getenv("REDIS_PORT")
 	viperObj.SetEnvPrefix("REDIS")
@@ -78,7 +77,7 @@ func TestNoDefaultFileFound(t *testing.T) {
 	os.Setenv("REDIS_HOST", "")
 	os.Setenv("REDIS_PORT", "")
 	os.Setenv("REDIS_HOST", "")
-	redisConfig := CommonCfg.RedisConfig{Viper: viperObj}
+	redisConfig := RedisConfig{Viper: viperObj}
 	assert.Equal(t, redisConfig.Port(), 6379)
 	assert.Equal(t, redisConfig.Host(), "0.0.0.0")
 	os.Setenv("REDIS_PORT", tmpPort)

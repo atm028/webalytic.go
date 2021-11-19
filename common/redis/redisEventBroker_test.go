@@ -1,4 +1,4 @@
-package wbut
+package RedisBroker
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	Common "github.com/webalytic.go/common"
 
 	CommonCfg "github.com/webalytic.go/common/config"
-	RedisBroker "github.com/webalytic.go/common/redis"
 	"go.uber.org/fx"
 )
 
@@ -26,7 +25,7 @@ func TestRedisEventBroker(t *testing.T) {
 		componentName := "test"
 		commonCfgOption := CommonCfg.Container()
 		commonOptions := Common.Container(componentName)
-		redisBroker := RedisBroker.Container()
+		redisBroker := Container()
 		return fx.Options(
 			fx.Provide(func() string { return componentName }),
 			commonOptions,
@@ -63,7 +62,7 @@ func TestRedisEventBroker(t *testing.T) {
 			container,
 			fx.Invoke(func(
 				logger bunyan.Logger,
-				broker *RedisBroker.RedisBroker,
+				broker *RedisBroker,
 			) {
 				ch := make(chan redis.XMessage)
 				chName := "collector-stream-test"
@@ -103,7 +102,7 @@ func TestRedisEventBroker(t *testing.T) {
 			container,
 			fx.Invoke(func(
 				logger bunyan.Logger,
-				broker *RedisBroker.RedisBroker,
+				broker *RedisBroker,
 			) {
 				ch := make(chan redis.XMessage)
 				chName := "service-stream"

@@ -1,4 +1,4 @@
-package wbut
+package app
 
 import (
 	"context"
@@ -11,13 +11,12 @@ import (
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/go-redis/redis"
 	"github.com/stretchr/testify/assert"
-	"github.com/webalytic.go/cmd/handler/app"
 	Datasources "github.com/webalytic.go/common/datasources"
 	"go.uber.org/fx"
 )
 
 func SetContainerUp() fx.Option {
-	container := app.Container()
+	container := Container()
 	return container
 }
 
@@ -67,7 +66,7 @@ func TestSubscribeAndAbleToPublishAndReadFromStream(t *testing.T) {
 			}
 
 			ch := make(chan redis.XMessage)
-			go app.RedisEventBrokerHandler(logger, clickhouse, ch)
+			go RedisEventBrokerHandler(logger, clickhouse, ch)
 			ch <- redisMsg
 			time.Sleep(2 * time.Second)
 			foundPayment, err := clickhouse.FindPayment("trace_id", traceID)

@@ -1,4 +1,4 @@
-package wbut
+package Datasources
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 
 	Common "github.com/webalytic.go/common"
 	CommonCfg "github.com/webalytic.go/common/config"
-	Datasources "github.com/webalytic.go/common/datasources"
 	"go.uber.org/fx"
 )
 
@@ -19,7 +18,7 @@ func TestClickhouse(t *testing.T) {
 		componentName := "test"
 		commonCfgOptions := CommonCfg.Container()
 		commonOptions := Common.Container(componentName)
-		clickhouse := Datasources.Clickhouse()
+		clickhouse := Clickhouse()
 		ackRedisChannel := fx.Option(fx.Provide(func() chan string {
 			ch := make(chan string)
 			return ch
@@ -40,9 +39,9 @@ func TestClickhouse(t *testing.T) {
 			container,
 			fx.Invoke(func(
 				logger bunyan.Logger,
-				clickhouse *Datasources.ClickHouse,
+				clickhouse *ClickHouse,
 			) {
-				payment_in := Datasources.Payment{
+				payment_in := &Payment{
 					TraceID:           "1",
 					Merchant:          "TestMerchant",
 					Sum:               123.45,
@@ -68,7 +67,8 @@ func TestClickhouse(t *testing.T) {
 					Field9:            "tests_field9",
 					Field10:           "tests_field10",
 				}
-				clickhouse.CreateRecord("key1", &payment_in)
+
+				clickhouse.CreatePayment("key1", payment_in)
 				time.Sleep(time.Second)
 				payment_out, _ := clickhouse.FindPayment("trace_id=?", "1")
 				assert.Equal(t, payment_in.Sum, payment_out.Sum)
@@ -92,7 +92,7 @@ func TestClickhouse(t *testing.T) {
 				assert.Equal(t, payment_in.Field8, payment_out.Field8)
 				assert.Equal(t, payment_in.Field9, payment_out.Field9)
 				assert.Equal(t, payment_in.Field10, payment_out.Field10)
-				clickhouse.Db.Migrator().DropTable(&Datasources.Payment{})
+				clickhouse.Db.Migrator().DropTable(&Payment{})
 				cancel()
 			}),
 		)

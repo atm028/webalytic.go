@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deployment
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.30.0
+        ports:
+        - containerPort: 9090
+      - name: cadvisor
+        image: gcr.io/cadvisor/cadvisor
+        ports:
+        - containerPort: 9080
+      - name: node-exporter
+        image: prom/node-exporter
+        ports:
+        - containerPort: 9100
+
