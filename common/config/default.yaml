@@ -10,3 +10,5 @@ handler:
 
 redis:
   stream: "collector-stream"
+  port: 6379
+  host: "0.0.0.0"

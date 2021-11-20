@@ -1,4 +1,4 @@
-package wbut
+package RedisBroker
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-package wbut
+package app
 
 import (
 	"bytes"
@@ -11,18 +11,17 @@ import (
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-	"github.com/webalytic.go/cmd/collector/app"
 	"go.uber.org/fx"
 )
 
 func TestHandlePaymentRequest(t *testing.T) {
-	container := app.Container()
+	container := Container()
 	ctx, cancel := context.WithCancel(context.Background())
 	app := fx.New(
 		container,
 		fx.Invoke(func(
 			logger bunyan.Logger,
-			httpCollectorHandler *app.ICollectHandler,
+			httpCollectorHandler *ICollectHandler,
 		) {
 			body := []byte(`
 			{

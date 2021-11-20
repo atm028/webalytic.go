@@ -15,3 +15,9 @@ handler:
 docker: docker_collector docker_handler
 
 all: collector handler
+
+.PHONY: unit-test
+unit-test:
+	@docker build . --target unit-test
+
+

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
+	"gorm.io/gorm"
 )
 
 type Payment struct {
@@ -49,4 +50,9 @@ func PaymentHelper(r io.Reader, traceID string, logger bunyan.Logger) ([]byte, e
 		return nil, err
 	}
 	return out, nil
+}
+
+func Migration(db *gorm.DB) {
+	db.AutoMigrate(&Payment{})
+	db.Migrator().CreateTable(Payment{})
 }

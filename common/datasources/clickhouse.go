@@ -4,7 +4,6 @@ package Datasources
 
 import (
 	"fmt"
-
 	"sync"
 	"time"
 
@@ -26,9 +25,9 @@ var (
 )
 
 type IClickHouse interface {
-	CreateRecord(key string, data *Payment) error
+	CreatePayment(key string, payment *Payment) error
 	FindPayment(req string, val string) (*Payment, error)
-	flushTimer() *chan struct{}
+	flushTimer() *chan bool
 	flush()
 }
 
@@ -52,21 +51,17 @@ func (c *ClickHouse) flush() {
 	}
 
 	if c.Db != nil && c.count > 0 {
-		//TODO: the lngth should be sued with make but append increment the length. Check how to use it in the right way.
-		vals := make([]*Payment, 0)
+		payments := make([]*Payment, 0, c.count)
 		for _, v := range c.payments {
-			vals = append(vals, v)
+			payments = append(payments, v)
 		}
-
-		//res := c.Db.Model(&Payment{}).Create(&vals)
-		res := c.Db.Create(&vals)
+		res := c.Db.Create(&payments)
 		if res.Error != nil {
-			c.logger.Error(fmt.Sprintf("Payments insert error: %s", res.Error))
+			c.logger.Error(fmt.Sprintf("Not able to create record: %s", res.Error))
 		} else {
-			c.logger.Debug(fmt.Sprintf("Flushed %d records", c.count))
-
+			c.logger.Debug(fmt.Sprintf("Created %d records", len(payments)))
 			for key := range c.payments {
-				c.logger.Debug(fmt.Sprintf("Send ACK: %s", key))
+				c.logger.Debug(fmt.Sprintf("Send ACK for key: %s", key))
 				c.ackCh <- key
 				handlerFlushedRecordsCnt.Inc()
 				delete(c.payments, key)
@@ -93,12 +88,10 @@ func (c *ClickHouse) flushTimer() *chan bool {
 	return &done
 }
 
-//TODO: Generalize interface from Payments to {}interface
-
-func (c *ClickHouse) CreateRecord(key string, data *Payment) error {
+func (c *ClickHouse) CreatePayment(key string, payment *Payment) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.payments[key] = data
+	c.payments[key] = payment
 	c.count++
 	if c.count >= c.FlushLimit {
 		c.flush()
@@ -123,10 +116,16 @@ func Clickhouse() fx.Option {
 			logger.Fatal(fmt.Sprintf("Not able to connect to Clickhouse: %s", err))
 		}
 		prometheus.MustRegister(handlerFlushedRecordsCnt)
+
+		/**
+		Provide migration for each suported type
+		*/
+		// 1. Payment
 		logger.Debug("Migration: Payment")
 		db.AutoMigrate(&Payment{})
 		db.Migrator().CreateTable(Payment{})
 		logger.Debug("Migration: Payment: Done")
+
 		ch := &ClickHouse{
 			Db:            db,
 			logger:        logger,
