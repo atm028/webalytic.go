@@ -16,7 +16,7 @@ services:
         container_name: "clickhouse"
         restart: always
         volumes:
-            - "/Users/tmorozov/Projects/data/clickhouse:/var/lib/clickhouse"
+            - "${BASE_PATH}/clickhouse:/var/lib/clickhouse"
         ports: 
             - 8123:8123
             - 9000:9000
@@ -29,7 +29,7 @@ services:
         image: "collector"
         restart: always
         volumes:
-            - "/Users/tmorozov/Projects/data/webalytic:/mnt/log"
+            - "${BASE_PATH}/webalytic:/mnt/log"
         environment: 
             - APP_PORT=80
             #- APP_PORT=8090
@@ -52,7 +52,7 @@ services:
         image: "collector"
         restart: always
         volumes:
-            - "/Users/tmorozov/Projects/data/webalytic:/mnt/log"
+            - "${BASE_PATH}/webalytic:/mnt/log"
         environment: 
             - APP_PORT=80
             #- APP_PORT=8092
@@ -76,7 +76,7 @@ services:
         container_name: "webalytic_handler"
         restart: always
         volumes:
-            - "/Users/tmorozov/Projects/data/webalytic:/mnt/log"
+            - "${BASE_PATH}/webalytic:/mnt/log"
         environment: 
             - APP_NAME=handler
             - REDIS_HOST=${REDIS_HOST}
@@ -100,7 +100,7 @@ services:
     prometheus:
         image: "prom/prometheus:v2.30.0"
         volumes: 
-            - "/Users/tmorozov/Projects/data/prometheus:/etc/prometheus"
+            - "${BASE_PATH}/prometheus:/etc/prometheus"
             - prometheus_data:/prometheus
         command:
             - '--config.file=/etc/prometheus/prometheus.yml'
@@ -160,9 +160,9 @@ services:
             - 3000:3000
         volumes: 
             - grafana_data:/var/lib/grafana
-            - "/Users/tmorozov/Projects/data/grafana/provisioning:/etc/grafana/provisioning"
+            - "${BASE_PATH}/grafana/provisioning:/etc/grafana/provisioning"
         env_file:
-            - /Users/tmorozov/Projects/data/grafana/config.monitoring
+            - ${BASE_PATH}/grafana/config.monitoring
         networks:
             - webalytic_net
         restart: always
@@ -171,8 +171,8 @@ services:
         image: consul:1.9.3
         restart: always
         volumes:
-            - /Users/tmorozov/Projects/data/consul/server1.json:/consul/server1.json:ro
-            - /Users/tmorozov/Projects/data/consul/certs/:/consul/config/certs/:ro
+            - ${BASE_PATH}/consul/server1.json:/consul/server1.json:ro
+            - ${BASE_PATH}/consul/certs/:/consul/config/certs/:ro
         networks: 
             webalytic_net:
                 ipv4_address: 172.28.1.10
@@ -189,15 +189,15 @@ services:
             - 80:80
             - 1936:1936
         volumes:
-            - /Users/tmorozov/Projects/data/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+            - ${BASE_PATH}/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
         networks: 
             - webalytic_net
 #    api_gw:
 #        image: nginx:1.21.3
 #        restart: always
 #        volumes: 
-#            - /Users/tmorozov/Projects/data/nginx/api_gw.conf:/etc/nginx/conf.d/default.conf:ro
-#            - /Users/tmorozov/Projects/data/nginx/api_gw_haproxy.cfg:/etc/nginx/conf.d/haproxy.cfg
+#            - ${BASE_PATH}/nginx/api_gw.conf:/etc/nginx/conf.d/default.conf:ro
+#            - ${BASE_PATH}/nginx/api_gw_haproxy.cfg:/etc/nginx/conf.d/haproxy.cfg
 #        ports:
 #            - 80:80
 
